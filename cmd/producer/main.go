@@ -13,11 +13,16 @@ import (
 )
 
 func makeDummyLog() Log.Log {
-	randInt := rand.IntN(100)
+	levels := []string{"INFO", "ERROR", "WARN"}
+	services := []string{"auth", "payment", "inventory", "gateway"}
+
+	randLvl := levels[rand.IntN(len(levels))]
+	randService := services[rand.IntN(len(services))]
+
 	return Log.Log{
-		Service:   "auth",
-		Message:   fmt.Sprintf("user%d logged in", randInt),
-		Level:     "INFO",
+		Service:   randService,
+		Message:   fmt.Sprintf("log from %v", randService),
+		Level:     randLvl,
 		Timestamp: time.Now(),
 	}
 }
