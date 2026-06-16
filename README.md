@@ -1,4 +1,7 @@
-A distributed log aggregation and streaming platform.
+## Parel DLASS
+
+### Proposed System Architecture:
+
 
 3 layers:
 Ingestion -> Redis Stream -> Egress
