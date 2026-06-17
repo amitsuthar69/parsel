@@ -33,14 +33,15 @@ func main() {
 			return
 		}
 
-		log.Printf("[%s] %s | %s: %s",
-			entry.Timestamp.Format("15:04:05"),
-			entry.Level,
-			entry.Service,
-			entry.Message,
-		)
+		if entry.Level == "ERROR" {
+			log.Printf("ALERT | %s | %s: %s",
+				entry.Timestamp.Format("15:04:05"),
+				entry.Service,
+				entry.Message,
+			)
+		}
 	}
 
-	log.Println("Logger consumer started...")
-	shared.StartConsumer(ctx, rdb, "parsel:logs", "logger-group", "logger-1", handler)
+	log.Println("Alerter started, watching for ERROR logs...")
+	shared.StartConsumer(ctx, rdb, "parsel:logs", "alerter-group", "alerter-1", handler)
 }

@@ -13,7 +13,12 @@ func StartConsumer(
 	streamName string,
 	groupName string,
 	consumerName string,
-	handlerFunc func(msg redis.XMessage)) error {
+	handlerFunc func(msg redis.XMessage)) {
+
+	err := rdb.XGroupCreateMkStream(ctx, streamName, groupName, "0").Err()
+	if err != nil && err.Error() != "BUSYGROUP Consumer Group name already exists" {
+		log.Fatalf("Failed to create consumer group: %v", err)
+	}
 
 	readArgs := &redis.XReadGroupArgs{
 		Streams:  []string{streamName, ">"},
@@ -21,8 +26,6 @@ func StartConsumer(
 		Consumer: consumerName,
 		Block:    0,
 	}
-
-	rdb.XGroupCreateMkStream(ctx, streamName, groupName, "0")
 
 	for {
 		streams, err := rdb.XReadGroup(ctx, readArgs).Result()
