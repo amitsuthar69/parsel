@@ -13,7 +13,7 @@ func StartConsumer(
 	streamName string,
 	groupName string,
 	consumerName string,
-	handlerFunc func(msg redis.XMessage)) error {
+	handlerFunc func(msg redis.XMessage)) {
 
 	readArgs := &redis.XReadGroupArgs{
 		Streams:  []string{streamName, ">"},

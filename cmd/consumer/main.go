@@ -26,5 +26,5 @@ func main() {
 	}
 
 	handler := func(msg redis.XMessage) {}
-	shared.StartConsumer(ctx, rdb, "stream-1", "group-1", "consumer-1", handler)
+	shared.StartConsumer(ctx, rdb, "parsel:logs", "group-1", "consumer-1", handler)
 }
