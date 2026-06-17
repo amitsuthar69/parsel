@@ -57,14 +57,8 @@ func main() {
 	go hub.Run()
 
 	handler := func(msg redis.XMessage) {
-		raw, ok := msg.Values["logData"].(string)
-		if !ok {
-			log.Printf("type assertion failed for message %s", msg.ID)
-			return
-		}
-
-		var entry models.Log
-		if err := json.Unmarshal([]byte(raw), &entry); err != nil {
+		entry, err := models.XMessageToLog(msg)
+		if err != nil {
 			log.Printf("unmarshal failed for message %s: %v", msg.ID, err)
 			return
 		}
