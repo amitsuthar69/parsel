@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	config "github.com/amitsuthar69/parsel/internal/config"
 	shared "github.com/amitsuthar69/parsel/internal/consumer"
 	models "github.com/amitsuthar69/parsel/internal/models"
 	"github.com/gorilla/websocket"
@@ -39,8 +40,9 @@ func handleConn(hub *Hub, w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	cfg := config.Load()
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     cfg.RedisAddr,
 		Password: "",
 		DB:       0,
 		Protocol: 2,
@@ -72,14 +74,14 @@ func main() {
 		hub.broadcast <- jsonBytes
 	}
 
-	go shared.StartConsumer(ctx, rdb, "parsel:logs", "wsgateway-group", "wsgateway-1", handler)
+	go shared.StartConsumer(ctx, rdb, cfg.StreamName, "wsgateway-group", "wsgateway-1", handler)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		handleConn(hub, w, r)
 	})
 
 	log.Println("WebSocket gateway listening on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(cfg.WSAddr, nil); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }

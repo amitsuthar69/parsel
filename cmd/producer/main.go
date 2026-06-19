@@ -1,15 +1,16 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand/v2"
 	"os"
+	"path/filepath"
 	"time"
 
+	config "github.com/amitsuthar69/parsel/internal/config"
+	"github.com/amitsuthar69/parsel/internal/models"
 	Log "github.com/amitsuthar69/parsel/internal/models"
-	"github.com/redis/go-redis/v9"
 )
 
 func makeDummyLog() Log.Log {
@@ -36,46 +37,36 @@ func tickLogs(logsChan chan Log.Log) {
 	}
 }
 
-func main() {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       0,
-		Protocol: 2,
-	})
-	defer rdb.Close()
+func writeToLogFile(entry models.Log, logDir string) error {
+	line := fmt.Sprintf(`{"log":"%s","stream":"stdout","time":"%s"}`,
+		entry.Message,
+		entry.Timestamp.UTC().Format(time.RFC3339Nano),
+	)
 
-	ctx := context.Background()
-	if err := rdb.Ping(ctx).Err(); err != nil {
-		fmt.Printf("Could not connect to Redis: %v", err)
-		os.Exit(1)
+	filePath := filepath.Join(logDir, entry.Service+".log")
+	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
 	}
+	defer f.Close()
 
-	logsChan := make(chan Log.Log)
+	_, err = fmt.Fprintln(f, line)
+	return err
+}
+
+func main() {
+	cfg := config.Load()
+
+	logsChan := make(chan models.Log)
 	go tickLogs(logsChan)
 
-	for log := range logsChan {
-		jsonLog, err := json.Marshal(log)
-		if err != nil {
-			fmt.Printf("Failed to marshal log: %v", err)
+	log.Printf("producer started, writing to dir: %s", cfg.LogDir)
+
+	for entry := range logsChan {
+		if err := writeToLogFile(entry, cfg.LogDir); err != nil {
+			log.Printf("failed to write log: %v", err)
 			continue
 		}
-
-		streamArgs := &redis.XAddArgs{
-			Stream: "parsel:logs",
-			ID:     "*",
-			Values: map[string]any{
-				"logData": string(jsonLog),
-			},
-		}
-
-		id, err := rdb.XAdd(ctx, streamArgs).Result()
-		if err != nil {
-			fmt.Printf("Failed to put log on stream: %v", err)
-			continue
-		} else {
-			fmt.Printf("[%s] Pushed to Stream (ID: %s): %s\n",
-				time.Now().Format("15:04:05"), id, log.Message)
-		}
+		log.Printf("[%s] %s | %s: %s", entry.Timestamp.Format("15:04:05"), entry.Level, entry.Service, entry.Message)
 	}
 }
