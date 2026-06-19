@@ -8,7 +8,7 @@ Parsel aggregates logs from files, transports them through a Redis Stream, and f
 
 ### How it works
 
-**Agent** watches a directory for `*.log`, when a file is written to, it reads the new bytes, parses each line as *containerd-format* JSON, and pushes a structured log entry to a Redis Stream.
+**Agent** watches a directory for `*.log`, when a file is written to, it reads the new bytes, parses each line as JSON *containerd-format*, and pushes a structured log entry to a Redis Stream.
 
 **Redis Stream** acts as the transport layer. Each egress component has its own consumer group, so they all receive every message independently and track their own progress.
 
@@ -46,12 +46,9 @@ Parsel expects logs in containerd JSON format, one JSON object per line:
 
 The service name is derived from the log filename. A file named `payment.log` produces logs with `"service": "payment"`.
 
-To write a log entry manually:
-
-
 ### Configuration
 
-All components are configured via environment variables. Defaults work out of the box for local development.
+All components are configured via environment variables.
 
 | Variable | Default | Description |
 |---|---|---|
