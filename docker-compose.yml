@@ -3,3 +3,58 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+
+  agent:
+    build: .
+    image: parsel:local
+    command: ["/usr/local/bin/agent"]
+    environment:
+      REDIS_ADDR: redis:6379
+      LOG_DIR: /logs
+      NODE_NAME: compose-agent
+      STREAM_NAME: parsel:logs
+    volumes:
+      - ./logs:/logs
+    depends_on:
+      - redis
+
+  consumer:
+    image: parsel:local
+    command: ["/usr/local/bin/consumer"]
+    environment:
+      REDIS_ADDR: redis:6379
+      NODE_NAME: compose-consumer
+      STREAM_NAME: parsel:logs
+    depends_on:
+      - redis
+
+  alerter:
+    image: parsel:local
+    command: ["/usr/local/bin/alerter"]
+    environment:
+      REDIS_ADDR: redis:6379
+      NODE_NAME: compose-alerter
+      STREAM_NAME: parsel:logs
+    depends_on:
+      - redis
+
+  wsgateway:
+    image: parsel:local
+    command: ["/usr/local/bin/wsgateway"]
+    environment:
+      REDIS_ADDR: redis:6379
+      WS_ADDR: :8080
+      NODE_NAME: compose-ws
+      STREAM_NAME: parsel:logs
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+
+  producer:
+    image: parsel:local
+    command: ["/usr/local/bin/producer"]
+    environment:
+      LOG_DIR: /logs
+    volumes:
+      - ./logs:/logs

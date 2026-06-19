@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	config "github.com/amitsuthar69/parsel/internal/config"
 	shared "github.com/amitsuthar69/parsel/internal/consumer"
 	models "github.com/amitsuthar69/parsel/internal/models"
 
@@ -12,8 +13,10 @@ import (
 )
 
 func main() {
+	cfg := config.Load()
+
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     cfg.RedisAddr,
 		Password: "",
 		DB:       0,
 		Protocol: 2,
@@ -43,5 +46,5 @@ func main() {
 	}
 
 	log.Println("Alerter started, watching for ERROR logs...")
-	shared.StartConsumer(ctx, rdb, "parsel:logs", "alerter-group", "alerter-1", handler)
+	shared.StartConsumer(ctx, rdb, cfg.StreamName, "alerter-group", "alerter-1", handler)
 }

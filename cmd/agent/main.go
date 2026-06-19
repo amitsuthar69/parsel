@@ -10,10 +10,13 @@ import (
 	"strings"
 	"time"
 
+	config "github.com/amitsuthar69/parsel/internal/config"
 	models "github.com/amitsuthar69/parsel/internal/models"
 	"github.com/fsnotify/fsnotify"
 	"github.com/redis/go-redis/v9"
 )
+
+var cfg config.Config
 
 type ContainerdLog struct {
 	Log    string `json:"log"`
@@ -50,8 +53,10 @@ func pushToRedis(ctx context.Context, rdb *redis.Client, entry models.Log) {
 	}
 
 	if err := rdb.XAdd(ctx, &redis.XAddArgs{
-		Stream: "parsel:logs",
+		Stream: cfg.StreamName,
 		ID:     "*",
+		MaxLen: 10000,
+		Approx: true,
 		Values: map[string]any{
 			"logData": string(jsonBytes),
 		},
@@ -60,8 +65,8 @@ func pushToRedis(ctx context.Context, rdb *redis.Client, entry models.Log) {
 	}
 }
 
-func startWatcher(filepath string, rdb *redis.Client, ctx context.Context) {
-	stat, err := os.Stat(filepath)
+func startWatcher(logFile string, rdb *redis.Client, ctx context.Context) {
+	stat, err := os.Stat(logFile)
 	var offset int64 = 0
 	if err == nil {
 		offset = stat.Size()
@@ -69,12 +74,12 @@ func startWatcher(filepath string, rdb *redis.Client, ctx context.Context) {
 
 	partial := []byte{}
 
-	parts := strings.Split(filepath, "/")
+	parts := strings.Split(logFile, "/")
 	filename := parts[len(parts)-1]
 	filename = strings.TrimSuffix(filename, ".log")
 
 	readNew := func() {
-		f, err := os.Open(filepath)
+		f, err := os.Open(logFile)
 		if err != nil {
 			return
 		}
@@ -123,8 +128,8 @@ func startWatcher(filepath string, rdb *redis.Client, ctx context.Context) {
 		return
 	}
 
-	if err := watcher.Add(filepath); err != nil {
-		log.Printf("watcher.Add error for %s: %v", filepath, err)
+	if err := watcher.Add(logFile); err != nil {
+		log.Printf("watcher.Add error for %s: %v", logFile, err)
 		return
 	}
 
@@ -182,8 +187,9 @@ func watchDir(dirPath string, rdb *redis.Client, ctx context.Context) {
 }
 
 func main() {
+	cfg = config.Load()
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     cfg.RedisAddr,
 		Password: "",
 		DB:       0,
 		Protocol: 2,
@@ -196,7 +202,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	dirPath := "/var/log/containers"
+	dirPath := cfg.LogDir
 	if len(os.Args) > 1 {
 		dirPath = os.Args[1]
 	}
