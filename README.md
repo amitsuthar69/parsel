@@ -4,7 +4,7 @@ Parsel aggregates logs from files, transports them through a Redis Stream, and f
 
 ### Proposed System Architecture:
 
-...
+<img width="3826" height="1661" alt="image" src="https://github.com/user-attachments/assets/df929845-14f7-4fd6-babf-3d807a1c4f8d" />
 
 ### How it works
 
