@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand/v2"
@@ -38,10 +39,18 @@ func tickLogs(logsChan chan Log.Log) {
 }
 
 func writeToLogFile(entry models.Log, logDir string) error {
-	line := fmt.Sprintf(`{"log":"%s","stream":"stdout","time":"%s"}`,
-		entry.Message,
-		entry.Timestamp.UTC().Format(time.RFC3339Nano),
-	)
+	innerJSON, _ := json.Marshal(entry)
+
+	outer := map[string]string{
+		"log":    string(innerJSON),
+		"stream": "stdout",
+		"time":   entry.Timestamp.UTC().Format(time.RFC3339Nano),
+	}
+
+	line, err := json.Marshal(outer)
+	if err != nil {
+		return err
+	}
 
 	filePath := filepath.Join(logDir, entry.Service+".log")
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -50,7 +59,7 @@ func writeToLogFile(entry models.Log, logDir string) error {
 	}
 	defer f.Close()
 
-	_, err = fmt.Fprintln(f, line)
+	_, err = fmt.Fprintln(f, string(line))
 	return err
 }
 

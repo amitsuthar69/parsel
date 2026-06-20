@@ -12,7 +12,7 @@ Parsel aggregates logs from files, transports them through a Redis Stream, and f
 
 **Redis Stream** acts as the transport layer. Each egress component has its own consumer group, so they all receive every message independently and track their own progress.
 
-**Logger consumer** (demo) reads from the stream and prints every log entry to stdout. (todo: replace it with a persistent DB writer)
+**DB writer** reads from the stream and write the logs into a PostgreSQL database.
 
 **Alerter consumer** reads from the stream and prints a formatted alert for every `ERROR`-level log.
 
@@ -36,12 +36,19 @@ To see logs streaming over WebSocket:
 websocat ws://localhost:8080/ws
 ```
 
+To see logs in database:
+
+```bash
+docker exec -it parsel-postgres-1 psql -U parsel -d parsel
+SELECT * FROM logs;
+```
+
 ### Log format
 
 Parsel expects logs in containerd JSON format, one JSON object per line:
 
 ```json
-{"log":"your message here","stream":"stdout","time":"2026-06-19T10:00:00Z"}
+{"log":"{\"service\":\"auth\",\"level\":\"INFO\",...}","stream":"stdout","time":"..."}
 ```
 
 The service name is derived from the log filename. A file named `payment.log` produces logs with `"service": "payment"`.
@@ -54,9 +61,10 @@ All components are configured via environment variables.
 |---|---|---|
 | `REDIS_ADDR` | `localhost:6379` | Redis address |
 | `STREAM_NAME` | `parsel:logs` | Redis Stream key |
-| `LOG_DIR` | `/var/log/containers` | Directory the agent watches |
+| `LOG_DIR` | `/logs` | Directory the agent watches |
 | `WS_ADDR` | `:8080` | WebSocket gateway listen address |
 | `NODE_NAME` | hostname | Identifier for this node |
+| `DATABASE_URL` | postgres://parsel:parsel@postgres:5432/parsel | PostgreSQL connection url |
 
 ---
 
@@ -67,7 +75,7 @@ parsel/
 ├── cmd/
 │   ├── agent/        ← log file watcher and Redis publisher
 │   ├── alerter/      ← ERROR log consumer
-│   ├── consumer/     ← demo consumer (logs to stdout)
+│   ├── dbwriter/     ← database writer (writes to postgreSQL)
 │   ├── producer/     ← demo log file writer
 │   └── wsgateway/    ← WebSocket fan-out gateway
 ├── internal/

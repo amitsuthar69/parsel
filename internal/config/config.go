@@ -7,20 +7,22 @@ import (
 )
 
 type Config struct {
-	RedisAddr  string
-	LogDir     string
-	WSAddr     string
-	NodeName   string
-	StreamName string
+	RedisAddr   string
+	LogDir      string
+	WSAddr      string
+	NodeName    string
+	StreamName  string
+	DatabaseURL string
 }
 
 func Load() Config {
 	return Config{
-		RedisAddr:  getenv("REDIS_ADDR", "localhost:6379"),
-		LogDir:     getenv("LOG_DIR", "/var/log/containers"),
-		WSAddr:     getenv("WS_ADDR", ":8080"),
-		NodeName:   getenv("NODE_NAME", hostnameOrFallback()),
-		StreamName: getenv("STREAM_NAME", "parsel:logs"),
+		RedisAddr:   getenv("REDIS_ADDR", "localhost:6379"),
+		LogDir:      getenv("LOG_DIR", "/var/log/containers"),
+		WSAddr:      getenv("WS_ADDR", ":8080"),
+		NodeName:    getenv("NODE_NAME", hostnameOrFallback()),
+		StreamName:  getenv("STREAM_NAME", "parsel:logs"),
+		DatabaseURL: getenv("DATABASE_URL", "postgres://parsel:parsel@postgres:5432/parsel"),
 	}
 }
 

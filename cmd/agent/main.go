@@ -37,10 +37,18 @@ func lineToLog(line string, filename string) (models.Log, error) {
 		t = time.Now()
 	}
 
+	var inner map[string]any
+	message := strings.TrimSpace(cl.Log)
+	if err := json.Unmarshal([]byte(cl.Log), &inner); err == nil {
+		if msg, ok := inner["message"].(string); ok {
+			message = msg
+		}
+	}
+
 	return models.Log{
 		Service:   service,
-		Message:   strings.TrimSpace(cl.Log),
-		Level:     "INFO",
+		Message:   message,
+		Level:     strings.TrimSpace(extractLevel(cl.Log)),
 		Timestamp: t,
 	}, nil
 }
@@ -184,6 +192,33 @@ func watchDir(dirPath string, rdb *redis.Client, ctx context.Context) {
 			}
 		}
 	}()
+}
+
+func extractLevel(rawLog string) string {
+	/* There's no level field in the containerd format, it's just raw stdout.
+	So the agent can't know the level from the file alone unless the log line itself contains it.
+	We expect that apps use JSON formatting, printing something like:
+	{"level":"error","message":"something failed","timestamp":"..."} to stdout.
+	So that the agent tries to JSON-parse the log field and extracts level from it directly.
+	*/
+
+	var structured map[string]any
+	if err := json.Unmarshal([]byte(rawLog), &structured); err == nil {
+		for _, key := range []string{"level", "severity", "lvl"} {
+			if v, ok := structured[key].(string); ok {
+				return strings.ToUpper(v)
+			}
+		}
+	}
+
+	// fallback: keyword scan
+	upper := strings.ToUpper(rawLog)
+	for _, level := range []string{"FATAL", "ERROR", "WARN", "WARNING", "DEBUG", "INFO"} {
+		if strings.Contains(upper, level) {
+			return level
+		}
+	}
+	return "INFO"
 }
 
 func main() {
