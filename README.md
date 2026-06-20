@@ -12,7 +12,7 @@ Parsel aggregates logs from files, transports them through a Redis Stream, and f
 
 **Redis Stream** acts as the transport layer. Each egress component has its own consumer group, so they all receive every message independently and track their own progress.
 
-**Logger consumer** (demo) reads from the stream and prints every log entry to stdout. (todo: replace it with a persistent DB writer)
+**DB writer** reads from the stream and write the logs into a PostgreSQL database.
 
 **Alerter consumer** reads from the stream and prints a formatted alert for every `ERROR`-level log.
 

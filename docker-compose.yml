@@ -4,6 +4,20 @@ services:
     ports:
       - "6379:6379"
 
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: parsel
+      POSTGRES_PASSWORD: parsel
+      POSTGRES_DB: parsel
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U parsel -d parsel"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
   agent:
     build: .
     image: parsel:local
@@ -18,15 +32,19 @@ services:
     depends_on:
       - redis
 
-  consumer:
+  dbwriter:
     image: parsel:local
-    command: ["/usr/local/bin/consumer"]
+    command: ["/usr/local/bin/dbwriter"]
     environment:
       REDIS_ADDR: redis:6379
-      NODE_NAME: compose-consumer
+      NODE_NAME: compose-dbwriter
       STREAM_NAME: parsel:logs
+      DATABASE_URL: postgres://parsel:parsel@postgres:5432/parsel
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   alerter:
     image: parsel:local
