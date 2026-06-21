@@ -69,6 +69,19 @@ services:
     depends_on:
       - redis
 
+  api:
+    image: parsel:local
+    command: ["/usr/local/bin/api"]
+    working_dir: /app
+    environment:
+      DATABASE_URL: postgres://parsel:parsel@postgres:5432/parsel
+      API_ADDR: :3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   producer:
     image: parsel:local
     command: ["/usr/local/bin/producer"]
