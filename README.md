@@ -2,7 +2,7 @@
 
 Parsel aggregates logs from files, transports them through a Redis Stream, and fans them out in real time to multiple independent consumers.
 
-### Proposed System Architecture:
+### System Architecture:
 
 <img width="3826" height="1661" alt="image" src="https://github.com/user-attachments/assets/df929845-14f7-4fd6-babf-3d807a1c4f8d" />
 
@@ -17,6 +17,12 @@ Parsel aggregates logs from files, transports them through a Redis Stream, and f
 **Alerter consumer** reads from the stream and prints a formatted alert for every `ERROR`-level log.
 
 **WebSocket gateway** reads from the stream and fans out every log entry in real time to all connected WebSocket clients.
+
+---
+
+### Web Dashboard Preview
+
+<img width="1846" height="988" alt="image" src="https://github.com/user-attachments/assets/bd999220-1270-449e-8563-3f01fd49f915" />
 
 ---
 
@@ -75,6 +81,7 @@ parsel/
 ├── cmd/
 │   ├── agent/        ← log file watcher and Redis publisher
 │   ├── alerter/      ← ERROR log consumer
+│   ├── api/          ← api server for web dashboard
 │   ├── dbwriter/     ← database writer (writes to postgreSQL)
 │   ├── producer/     ← demo log file writer
 │   └── wsgateway/    ← WebSocket fan-out gateway
@@ -82,6 +89,7 @@ parsel/
 │   ├── config/
 │   ├── consumer/     ← shared consumer logic
 │   └── models/
+├── web/
 ├── Dockerfile
 ├── docker-compose.yml
 └── .env
