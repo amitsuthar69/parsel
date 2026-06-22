@@ -1,16 +1,30 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"strings"
 
-	config "github.com/amitsuthar69/parsel/internal/config"
+	"github.com/amitsuthar69/parsel/internal/config"
 	shared "github.com/amitsuthar69/parsel/internal/consumer"
 	models "github.com/amitsuthar69/parsel/internal/models"
 
 	"github.com/redis/go-redis/v9"
 )
+
+func createWebhookPayload(webhookURL, message string) []byte {
+	if strings.Contains(webhookURL, "discord.com") {
+		body, _ := json.Marshal(map[string]string{"content": message})
+		return body
+	}
+	body, _ := json.Marshal(map[string]string{"text": message})
+	return body
+}
 
 func main() {
 	cfg := config.Load()
@@ -42,6 +56,17 @@ func main() {
 				entry.Service,
 				entry.Message,
 			)
+
+			body := createWebhookPayload(cfg.WebhookURL, fmt.Sprintf("%s : [%s] - %s", entry.Level, entry.Service, entry.Message))
+			resp, err := http.Post(cfg.WebhookURL, "application/json", bytes.NewBuffer(body))
+			if err != nil {
+				log.Printf("failed to send webhook: %v", err)
+				return
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode >= 300 {
+				log.Printf("webhook rejected with status %d", resp.StatusCode)
+			}
 		}
 	}
 

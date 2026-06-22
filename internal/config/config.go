@@ -14,6 +14,7 @@ type Config struct {
 	NodeName    string
 	StreamName  string
 	DatabaseURL string
+	WebhookURL  string
 }
 
 func Load() Config {
@@ -25,6 +26,7 @@ func Load() Config {
 		NodeName:    getenv("NODE_NAME", hostnameOrFallback()),
 		StreamName:  getenv("STREAM_NAME", "parsel:logs"),
 		DatabaseURL: getenv("DATABASE_URL", "postgres://parsel:parsel@postgres:5432/parsel"),
+		WebhookURL:  getenv("WEBHOOK_URL", ""),
 	}
 }
 
