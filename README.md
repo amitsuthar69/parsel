@@ -14,7 +14,7 @@ Parsel aggregates logs from files, transports them through a Redis Stream, and f
 
 **DB writer** reads from the stream and write the logs into a PostgreSQL database.
 
-**Alerter consumer** reads from the stream and prints a formatted alert for every `ERROR`-level log.
+**Alerter consumer** reads from the stream and publishes a slack/discord webhook message for every `ERROR`-level log.
 
 **WebSocket gateway** reads from the stream and fans out every log entry in real time to all connected WebSocket clients.
 
@@ -80,7 +80,7 @@ All components are configured via environment variables.
 parsel/
 ├── cmd/
 │   ├── agent/        ← log file watcher and Redis publisher
-│   ├── alerter/      ← ERROR log consumer
+│   ├── alerter/      ← ERROR log consumer with slack/discord webhook
 │   ├── api/          ← api server for web dashboard
 │   ├── dbwriter/     ← database writer (writes to postgreSQL)
 │   ├── producer/     ← demo log file writer
