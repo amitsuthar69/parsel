@@ -53,6 +53,7 @@ services:
       REDIS_ADDR: redis:6379
       NODE_NAME: compose-alerter
       STREAM_NAME: parsel:logs
+      WEBHOOK_URL: ${WEBHOOK_URL}
     depends_on:
       - redis
 
